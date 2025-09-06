@@ -1,60 +1,141 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
-  # Enable X11 windowing system
+  # Enable X11 windowing system with latest drivers
   services.xserver = {
     enable = true;
-    layout = "us";
-    xkbVariant = "";
+    xkb = {
+      layout = "us";
+      variant = "";
+    };
   };
 
-  # Enable GNOME Desktop Environment
+  # Latest GNOME Desktop Environment
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
 
-  # Enable sound with pipewire
-  sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  # Wayland support (default in latest GNOME)
+  services.xserver.displayManager.gdm.wayland = true;
+
+  # Modern audio with PipeWire
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
+    jack.enable = true;
   };
 
-  # Desktop-specific packages
+  # Latest desktop packages
   environment.systemPackages = with pkgs; [
-    # Calibre for library management
+    # Calibre for library management (latest version)
     calibre
     
-    # Desktop applications
+    # Modern browsers
     firefox
-    gnome.gnome-terminal
+    chromium
+    
+    # GNOME applications (latest versions)
     gnome.nautilus
+    gnome.gnome-terminal
     gnome.gedit
+    gnome.gnome-system-monitor
+    gnome.gnome-tweaks
+    gnome.dconf-editor
+    
+    # Development tools
+    vscode
+    git
+    gh
+    
+    # Media tools
+    vlc
+    gimp
     
     # System utilities
-    gnome.gnome-system-monitor
+    htop
+    btop
+    neofetch
     
-    # Remote desktop (optional)
+    # Remote desktop
     remmina
     
-    # Text editors
-    vscode
+    # Archive tools
+    unzip
+    p7zip
+    
+    # Fonts
+    dejavu_fonts
+    liberation_ttf
+    noto-fonts
+    noto-fonts-emoji
   ];
 
-  # Enable automatic login for desktop use (optional - remove for security)
-  services.xserver.displayManager.autoLogin.enable = true;
-  services.xserver.displayManager.autoLogin.user = "admin";
+  # Latest fonts configuration
+  fonts = {
+    packages = with pkgs; [
+      noto-fonts
+      noto-fonts-cjk
+      noto-fonts-emoji
+      liberation_ttf
+      fira-code
+      fira-code-symbols
+      dejavu_fonts
+      font-awesome
+    ];
+    
+    fontconfig = {
+      enable = true;
+      defaultFonts = {
+        serif = [ "DejaVu Serif" ];
+        sansSerif = [ "DejaVu Sans" ];
+        monospace = [ "Fira Code" ];
+        emoji = [ "Noto Color Emoji" ];
+      };
+    };
+  };
 
-  # Workaround for GNOME autologin
-  systemd.services."getty@tty1".enable = false;
-  systemd.services."autovt@tty1".enable = false;
+  # Enable automatic login (disable for production)
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = "admin";
+  };
 
-  # Enable printing (optional)
-  services.printing.enable = true;
+  # Enable GNOME services
+  services.gnome = {
+    gnome-keyring.enable = true;
+    sushi.enable = true;
+  };
 
-  # Enable touchpad support (if running on laptop hardware)
-  services.xserver.libinput.enable = true;
+  # Enable printing with modern drivers
+  services.printing = {
+    enable = true;
+    drivers = with pkgs; [ hplip cups-filters ];
+  };
+
+  # Bluetooth support
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+  };
+  services.blueman.enable = true;
+
+  # Enable touchpad support
+  services.libinput.enable = true;
+
+  # Hardware acceleration
+  hardware.opengl = {
+    enable = true;
+    driSupport = true;
+    driSupport32Bit = true;
+  };
+
+  # Exclude some GNOME apps to keep system clean
+  environment.gnome.excludePackages = with pkgs; [
+    gnome-tour
+    epiphany
+    geary
+    gnome.totem
+  ];
 }

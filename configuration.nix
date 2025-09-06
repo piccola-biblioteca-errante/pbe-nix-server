@@ -1,12 +1,9 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
-  imports =
-    [
-      ./hardware-configuration.nix
-      ./services.nix
-      ./desktop.nix
-    ];
+  imports = [
+    ./hardware-configuration.nix
+  ];
 
   # Boot loader configuration
   boot.loader.systemd-boot.enable = true;
@@ -16,8 +13,18 @@
   networking.hostName = "pbe-nix-server";
   networking.networkmanager.enable = true;
 
-  # Enable flakes and new command-line tool
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Enable flakes system-wide
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    auto-optimise-store = true;
+  };
+
+  # Garbage collection
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
 
   # Time zone and internationalization
   time.timeZone = "UTC";
@@ -34,18 +41,30 @@
   # System packages
   environment.systemPackages = with pkgs; [
     vim
+    neovim
     wget
     curl
     git
     htop
+    btop
     docker-compose
     tailscale
+    tmux
+    tree
+    fd
+    ripgrep
+    bat
   ];
 
   # Enable SSH
-  services.openssh.enable = true;
-  services.openssh.settings.PasswordAuthentication = false;
-  services.openssh.settings.KbdInteractiveAuthentication = false;
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
 
   # Firewall configuration
   networking.firewall = {
@@ -54,8 +73,16 @@
     trustedInterfaces = [ "tailscale0" ];
   };
 
-  # Docker support
-  virtualisation.docker.enable = true;
+  # Docker support with latest features
+  virtualisation.docker = {
+    enable = true;
+    enableOnBoot = true;
+    autoPrune.enable = true;
+  };
 
-  system.stateVersion = "23.11";
+  # Use latest kernel
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  # Latest system version
+  system.stateVersion = "24.05";
 }

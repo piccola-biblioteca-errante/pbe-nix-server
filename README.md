@@ -1,86 +1,277 @@
-# NixOS Server Configuration
+# NixOS Server Configuration (Flakes + Latest)
 
-This configuration sets up a NixOS server with:
-- Calibre Web Automated for ebook management
-- Desktop environment with Calibre
-- Tailscale integration with funnel for internet exposure
-- Docker support for additional services
+Modern NixOS server configuration using flakes and the latest packages, featuring:
 
-## Files Overview
+- 🐋 Calibre Web Automated (containerized)
+- 🖥️ GNOME Desktop with Wayland
+- 🔗 Tailscale + Funnel integration  
+- 🚀 Latest NixOS unstable
+- 📦 Flakes for reproducible builds
+- 🛡️ Security-first configuration
 
-- `configuration.nix` - Main NixOS configuration
-- `services.nix` - Service configurations (Tailscale, Calibre Web, Nginx)
-- `desktop.nix` - GNOME desktop environment with applications
-- `setup-funnel.sh` - Script to configure Tailscale funnel
-- `README.md` - This file
-
-## Installation Steps
-
-1. **Install NixOS** on your target machine
-
-2. **Copy configuration files** to `/etc/nixos/`:
-   ```bash
-   sudo cp *.nix /etc/nixos/
-   ```
-
-3. **Generate hardware configuration** (if not already present):
-   ```bash
-   sudo nixos-generate-config
-   ```
-
-4. **Apply the configuration**:
-   ```bash
-   sudo nixos-rebuild switch
-   ```
-
-5. **Set up user password**:
-   ```bash
-   sudo passwd admin
-   ```
-
-6. **Reboot the system**:
-   ```bash
-   sudo reboot
-   ```
-
-## Post-Installation Setup
-
-### 1. Tailscale Configuration
-
-After reboot, set up Tailscale:
+## Quick Start
 
 ```bash
-sudo tailscale up
+# Clone or download configuration files
+git clone <your-repo> /etc/nixos/
+
+# Generate hardware configuration
+sudo nixos-generate-config
+
+# Build and switch (first time)
+sudo nixos-rebuild switch --flake /etc/nixos#pbe-nix-server
+
+# Set user password
+sudo passwd admin
+
+# Reboot
+sudo reboot
 ```
 
-Follow the authentication link and log in to your Tailscale account.
+## File Structure
 
-### 2. Funnel Setup
+```
+/etc/nixos/
+├── flake.nix           # Flake configuration with inputs/outputs
+├── configuration.nix   # Main system config
+├── services.nix        # Services (Tailscale, Calibre, Nginx)
+├── desktop.nix         # GNOME desktop environment
+├── setup-funnel.sh     # Tailscale funnel setup script
+└── hardware-configuration.nix  # Auto-generated
+```
 
-Run the provided script to set up Tailscale funnel:
+## Features
 
+### 🎯 Latest Everything
+- NixOS unstable channel
+- Latest kernel
+- Modern Nginx with HTTP/3
+- GNOME with Wayland
+- PipeWire audio
+
+### 🐋 Container Management
+- Docker with auto-prune
+- OCI containers for services
+- Calibre Web Automated container
+
+### 🔐 Security
+- SSH key-only authentication
+- Minimal open ports
+- Tailscale zero-trust networking
+- Automatic security updates
+
+### 🖥️ Desktop Features
+- GNOME 45+ with Wayland
+- Modern fonts and themes
+- Hardware acceleration
+- Bluetooth support
+
+## Post-Install Setup
+
+### 1. Tailscale Authentication
 ```bash
+sudo tailscale up --ssh
+```
+
+### 2. Funnel Configuration
+```bash
+chmod +x setup-funnel.sh
 ./setup-funnel.sh
 ```
 
-This script will:
-- Verify Tailscale is running and authenticated
-- Get SSL certificates for your domain
-- Configure funnel to expose Calibre Web
-- Display the public URL
+### 3. Service Verification
+```bash
+# Check all services
+sudo systemctl status docker-calibre-web-automated
+sudo systemctl status tailscale
+sudo systemctl status nginx
 
-### 3. Calibre Web Setup
+# Check containers
+docker ps
+```
 
-1. The service should start automatically. Check status:
-   ```bash
-   sudo systemctl status calibre-web-automated
-   ```
+## Flake Commands
 
-2. Access Calibre Web locally at: `http://localhost:8083`
+```bash
+# Update flake inputs
+nix flake update
 
-3. Complete the initial setup in the web interface
+# Build configuration
+sudo nixos-rebuild switch --flake .#pbe-nix-server
 
-4. Add books by placing them in `/var/lib/calibre-web-automated/ingest/`
+# Check flake
+nix flake check
+
+# Show flake info
+nix flake show
+```
+
+## Adding Services
+
+Edit `services.nix` and add service configurations:
+
+```nix
+# Media server
+services.jellyfin.enable = true;
+
+# *arr stack
+services.sonarr.enable = true;
+services.radarr.enable = true;
+services.prowlarr.enable = true;
+
+# Cloud storage
+services.nextcloud = {
+  enable = true;
+  package = pkgs.nextcloud28;
+  # ... configuration
+};
+```
+
+Then rebuild:
+```bash
+sudo nixos-rebuild switch --flake .#pbe-nix-server
+```
+
+## Directory Layout
+
+```
+/var/lib/calibre-web-automated/
+├── config/     # Application config
+├── books/      # Library storage  
+└── ingest/     # Auto-import folder
+
+/home/admin/    # User home directory
+```
+
+## Customization
+
+### Desktop Environment
+Edit `desktop.nix` to:
+- Add/remove applications
+- Change themes
+- Configure fonts
+- Modify GNOME settings
+
+### Services
+Edit `services.nix` to:
+- Add new containers
+- Configure networking
+- Set up reverse proxy
+- Enable additional services
+
+### System
+Edit `configuration.nix` to:
+- Change system settings
+- Add users
+- Configure hardware
+- Set kernel parameters
+
+## Maintenance
+
+### Updates
+```bash
+# Update system
+sudo nixos-rebuild switch --upgrade --flake .#pbe-nix-server
+
+# Clean old generations
+sudo nix-collect-garbage -d
+```
+
+### Monitoring
+```bash
+# System resources
+htop
+btop
+
+# Service logs
+journalctl -u docker-calibre-web-automated -f
+journalctl -u tailscale -f
+
+# Container stats
+docker stats
+```
+
+### Backup
+Important paths to backup:
+- `/var/lib/calibre-web-automated/`
+- `/etc/nixos/`
+- `/home/admin/`
+
+## Troubleshooting
+
+### Container Issues
+```bash
+# Restart container
+sudo systemctl restart docker-calibre-web-automated
+
+# Check container logs
+docker logs calibre-web-automated
+
+# Rebuild container
+docker pull crocodilestick/calibre-web-automated:latest
+sudo systemctl restart docker-calibre-web-automated
+```
+
+### Network Issues
+```bash
+# Check Tailscale
+tailscale status
+tailscale ping <machine-name>
+
+# Check funnel
+tailscale funnel status
+
+# Test local service
+curl http://localhost:8083
+```
+
+### Desktop Issues
+```bash
+# Restart display manager
+sudo systemctl restart display-manager
+
+# Check Wayland
+echo $XDG_SESSION_TYPE
+
+# Switch to X11 (if needed)
+# Edit desktop.nix: services.xserver.displayManager.gdm.wayland = false;
+```
+
+### Flake Issues
+```bash
+# Check flake syntax
+nix flake check
+
+# Update lock file
+nix flake update
+
+# Build without switching
+sudo nixos-rebuild build --flake .#pbe-nix-server
+```
+
+## Migration from Legacy Config
+
+If upgrading from non-flake configuration:
+
+1. Backup current config
+2. Copy flake files to `/etc/nixos/`
+3. Run: `sudo nixos-rebuild switch --flake .#pbe-nix-server`
+4. Reboot if kernel updated
+
+## Performance Tips
+
+- Enable SSD optimizations in hardware-configuration.nix
+- Use zram for swap on low-memory systems
+- Enable fstrim for SSD maintenance
+- Consider btrfs with compression
+
+## Security Recommendations
+
+- Disable auto-login in production
+- Use SSH certificates instead of keys
+- Enable fail2ban for additional protection
+- Regular security updates with flake updates
+- Monitor with tools like Grafana/Prometheus
 
 ## Service Access
 
@@ -89,114 +280,9 @@ This script will:
 - **Desktop Environment**: Available after reboot (auto-login as admin)
 - **SSH**: Accessible on port 22 (key-based authentication only)
 
-## Adding More Services
+## Resources
 
-Edit `services.nix` to add additional services. Here are some examples:
-
-### Jellyfin Media Server
-```nix
-services.jellyfin = {
-  enable = true;
-  openFirewall = true;
-};
-```
-
-### Sonarr (TV Show Management)
-```nix
-services.sonarr = {
-  enable = true;
-  openFirewall = true;
-};
-```
-
-### Radarr (Movie Management)
-```nix
-services.radarr = {
-  enable = true;
-  openFirewall = true;
-};
-```
-
-### Nextcloud
-```nix
-services.nextcloud = {
-  enable = true;
-  package = pkgs.nextcloud28;
-  hostName = "nextcloud.local";
-  config = {
-    dbtype = "pgsql";
-    adminpassFile = "/var/lib/nextcloud/admin-pass";
-  };
-};
-```
-
-After adding services, rebuild the configuration:
-```bash
-sudo nixos-rebuild switch
-```
-
-## Directory Structure
-
-```
-/var/lib/calibre-web-automated/
-├── config/          # Calibre Web configuration
-├── books/           # Book library
-└── ingest/          # Drop books here for automatic import
-```
-
-## Security Notes
-
-- SSH password authentication is disabled (key-based only)
-- Firewall is enabled with minimal open ports (22, 80, 443)
-- Tailscale provides secure networking layer
-- Desktop auto-login is enabled (disable in production: set `services.xserver.displayManager.autoLogin.enable = false;` in `desktop.nix`)
-
-## Troubleshooting
-
-### Calibre Web not starting
-```bash
-sudo systemctl status calibre-web-automated
-sudo journalctl -u calibre-web-automated -f
-```
-
-### Tailscale issues
-```bash
-sudo systemctl status tailscale
-tailscale status
-```
-
-### Desktop not loading
-Check display manager:
-```bash
-sudo systemctl status display-manager
-```
-
-### Docker issues
-```bash
-sudo systemctl status docker
-docker ps
-```
-
-## Customization
-
-- Edit `desktop.nix` to add/remove desktop applications
-- Modify `services.nix` to configure additional services
-- Update `configuration.nix` for system-level changes
-
-## Backup Recommendations
-
-Important directories to backup:
-- `/var/lib/calibre-web-automated/` (books and configuration)
-- `/etc/nixos/` (system configuration)
-- Home directories (`/home/admin/`)
-
-## Support
-
-For NixOS-specific issues, refer to:
-- [NixOS Manual](https://nixos.org/manual/nixos/stable/)
-- [NixOS Options Search](https://search.nixos.org/options)
-- [NixOS Wiki](https://nixos.wiki/)
-
-For service-specific issues:
-- [Calibre Web Documentation](https://github.com/janeczku/calibre-web)
-- [Tailscale Documentation](https://tailscale.com/kb/)
+- [NixOS Flakes Guide](https://nixos.wiki/wiki/Flakes)
+- [NixOS Options Search](https://search.nixos.org/)
+- [Home Manager](https://github.com/nix-community/home-manager)
+- [Tailscale NixOS](https://tailscale.com/kb/1063/install-nixos/)
