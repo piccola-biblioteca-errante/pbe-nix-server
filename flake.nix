@@ -8,14 +8,25 @@
     # nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   };
 
-  outputs = { self, nixpkgs }: {
-    nixosConfigurations.pbe-nix-server = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules = [
-        ./configuration.nix
-        ./services.nix
-        ./desktop.nix
-      ];
+  outputs = {nixpkgs, ...}: let
+    mkSystem = system:
+      nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules =
+          [
+            ./configuration.nix
+            ./services.nix
+            ./desktop.nix
+            {
+              nixpkgs.hostPlatform = system;
+            }
+          ]
+          ++ nixpkgs.lib.lists.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
+      };
+  in {
+    nixosConfigurations = {
+      pbe-nix-server-x86 = mkSystem "x86_64-linux";
+      pbe-nix-server-arm64 = mkSystem "aarch64-linux";
     };
   };
 }
