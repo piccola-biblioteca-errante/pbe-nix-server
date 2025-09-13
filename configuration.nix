@@ -84,5 +84,5 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Latest system version
-  system.stateVersion = "24.05";
+  system.stateVersion = "25.05";
 }

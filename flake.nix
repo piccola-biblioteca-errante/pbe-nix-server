@@ -3,9 +3,9 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    
+
     # Optional: Use stable if you prefer stability over latest features
-    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   };
 
   outputs = { self, nixpkgs }: {

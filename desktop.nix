@@ -1,15 +1,6 @@
 { config, pkgs, lib, ... }:
 
 {
-  # Enable X11 windowing system with latest drivers
-  services.xserver = {
-    enable = true;
-    xkb = {
-      layout = "us";
-      variant = "";
-    };
-  };
-
   # Latest GNOME Desktop Environment
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
@@ -29,54 +20,40 @@
 
   # Latest desktop packages
   environment.systemPackages = with pkgs; [
-    # Calibre for library management (latest version)
-    calibre
-    
     # Modern browsers
     firefox
-    chromium
-    
+
     # GNOME applications (latest versions)
-    gnome.nautilus
-    gnome.gnome-terminal
-    gnome.gedit
-    gnome.gnome-system-monitor
-    gnome.gnome-tweaks
-    gnome.dconf-editor
-    
+    nautilus
+    gnome-terminal
+    gedit
+    gnome-system-monitor
+    gnome-tweaks
+    dconf-editor
+
+    # Calibre for library management (latest version)
+    calibre
+
     # Development tools
-    vscode
     git
-    gh
-    
+
     # Media tools
     vlc
-    gimp
-    
+
     # System utilities
-    htop
     btop
     neofetch
-    
-    # Remote desktop
-    remmina
-    
+
     # Archive tools
     unzip
     p7zip
-    
-    # Fonts
-    dejavu_fonts
-    liberation_ttf
-    noto-fonts
-    noto-fonts-emoji
   ];
 
   # Latest fonts configuration
   fonts = {
     packages = with pkgs; [
       noto-fonts
-      noto-fonts-cjk
+      noto-fonts-cjk-sans
       noto-fonts-emoji
       liberation_ttf
       fira-code
@@ -84,7 +61,7 @@
       dejavu_fonts
       font-awesome
     ];
-    
+
     fontconfig = {
       enable = true;
       defaultFonts = {
@@ -127,8 +104,6 @@
   # Hardware acceleration
   hardware.opengl = {
     enable = true;
-    driSupport = true;
-    driSupport32Bit = true;
   };
 
   # Exclude some GNOME apps to keep system clean
@@ -136,6 +111,6 @@
     gnome-tour
     epiphany
     geary
-    gnome.totem
+    totem
   ];
 }
